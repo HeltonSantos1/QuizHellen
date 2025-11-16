@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presente Confidencial</title>
+<style>
+  :root{
+    --rosa1:#ffd1e6; --rosa2:#ff7fbf; --rosa3:#e91e63; --txt:#222; --branco:#fff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--txt);
+    background: linear-gradient(160deg, var(--rosa1), var(--rosa2));
+    padding:24px;
+  }
+  .card{
+    width:min(620px, 100%); background:var(--branco); border-radius:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,.12); padding:28px; position:relative; overflow:hidden;
+  }
+  h1{ margin:0 0 16px; font-size:24px; line-height:1.25; text-align:center; }
+  p{ margin:0 0 16px; opacity:.8; text-align:center; }
+  .area-botoes{ display:flex; justify-content:center; gap:12px; margin-top:12px; }
+  #area1{ position:relative; min-height:120px; }
+  #btnNao1{ position:absolute; bottom:0; left:50%; transform:translateX(-50%); }
+
+  .btn{
+    border:0; cursor:pointer; font-weight:700; font-size:16px;
+    padding:12px 18px; border-radius:14px; margin:4px;
+    transition: transform .06s ease, opacity .2s ease, box-shadow .2s ease;
+  }
+  .btn-prim{ background:var(--rosa3); color:#fff; box-shadow:0 6px 14px rgba(233,30,99,.28); }
+  .btn-sec{ background:#ffe5f1; color:#d81b60; }
+  .btn:active{ transform: translateY(1px) scale(.99); }
+  .hide{ display:none !important; }
+  .msg{ margin-top:8px; font-size:14px; color:#666; min-height:20px; text-align:center; }
+  .erro{ color:#c62828 } .ok{ color:#2e7d32 }
+  .runner{ position:absolute; left:0; top:0; }
+
+  .btn[disabled]{
+    opacity:.5;
+    cursor:not-allowed;
+    box-shadow:none;
+    pointer-events:none;
+  }
+
+  form{ margin-top:6px; }
+  .grid{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
+  .grid > .col-span-2{ grid-column: span 2; }
+  label{ font-weight:600; font-size:14px; display:block; margin-bottom:6px; }
+  input[type="text"], input[type="number"]{
+    width:100%; padding:12px; border:1.5px solid #e9e9e9; border-radius:12px; font-size:15px; outline:none;
+    transition: border-color .15s ease;
+  }
+  input[type="text"]:focus, input[type="number"]:focus{ border-color: var(--rosa3); }
+  .pill{ display:inline-block; padding:4px 10px; border-radius:999px; background:#ffe5f1; color:#d81b60; font-weight:700; font-size:12px; }
+  .out{ background:#fafafa; border:1px dashed #e4e4e4; padding:14px; border-radius:14px; margin-top:10px; font-size:15px; }
+  .msg-inline{ font-size:13px; margin-top:6px; }
+
+  @keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.45s ease; border-color:#f44336 !important; }
+
+  .envelope-wrap{
+    display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:6px;
+  }
+  .envelope{
+    position:relative; width:min(420px, 100%);
+    aspect-ratio: 4 / 3;
+    background:#ffe5f1; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.12);
+    overflow:hidden; user-select:none;
+    transition: all .6s cubic-bezier(.22,1,.36,1);
+  }
+  .envelope .flap{
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, #ffd1e6, #ffc1dd);
+    clip-path: polygon(0 0, 100% 0, 50% 55%);
+    transform-origin: top center;
+    transition: transform .6s cubic-bezier(.22,1,.36,1);
+    z-index:3;
+  }
+  .envelope.open .flap{ transform: rotateX(180deg); }
+
+  .envelope .paper{
+    position:absolute; left:6%; right:6%; bottom:6%;
+    height:78%; background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.12);
+    transform: translateY(60%);
+    opacity:0;
+    transition: transform .6s cubic-bezier(.22,1,.36,1), opacity .3s ease;
+    padding:16px;
+    display:block;
+    overflow:hidden;
+  }
+  .envelope.open{
+    aspect-ratio:auto;
+    height:auto;
+    padding:16px 16px 20px;
+  }
+  .envelope.open .paper{
+    position:relative;
+    left:auto; right:auto; bottom:auto;
+    width:100%;
+    height:auto;
+    max-height:70vh;
+    display:block;
+    transform:none;
+    opacity:1;
+    overflow:auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .letter-content{ text-align:center; line-height:1.6; padding:8px 6px; }
+  .letter-content h2{ margin:0 0 8px; font-size:20px; }
+  .letter-content p{ margin:0; opacity:.9; white-space:pre-wrap; word-break:break-word; }
+  .hint{ font-size:13px; color:#555; }
+
+  @media (max-width:420px){
+    .envelope.open .paper{ max-height:72vh; }
+  }
+</style>
+</head>
+<body>
+
+<main class="card">
+  <!-- TELA 1 -->
+  <section id="tela1">
+    <h1>Presente confidencial, tem certeza que foi para você?</h1>
+    <p>Confirme para continuar.</p>
+    <div id="area1">
+      <button id="btnSim1" class="btn btn-prim runner">Sim</button>
+      <button id="btnNao1" class="btn btn-sec">Não</button>
+    </div>
+    <div id="msg1" class="msg"></div>
+  </section>
+
+  <!-- TELA 2 -->
+  <section id="tela2" class="hide">
+    <h1>Você é a Hellen Santos?</h1>
+    <div class="area-botoes">
+      <button id="btnNao2" class="btn btn-sec">Não</button>
+      <button id="btnSim2" class="btn btn-prim">Sim</button>
+    </div>
+    <div id="msg2" class="msg"></div>
+  </section>
+
+  <!-- TELA 3 -->
+  <section id="tela3" class="hide">
+    <h1>Tem certeza que seu nome é Hellen Santos?</h1>
+    <div class="area-botoes">
+      <button id="btnNao3" class="btn btn-sec">Não</button>
+      <button id="btnSim3" class="btn btn-prim">Sim</button>
+    </div>
+    <div id="msg3" class="msg"></div>
+  </section>
+
+  <!-- TELA 4 FORMULÁRIO -->
+  <section id="tela4" class="hide">
+    <h1><span class="pill">Formulário</span> Se você é mesmo ela, responda o pequeno formulário</h1>
+    <form id="formTaissa">
+      <div class="grid">
+        <div>
+          <label for="primeiro">Primeiro nome?</label>
+          <input id="primeiro" type="text" required>
+        </div>
+        <div>
+          <label for="segundo">Sobrenome?</label>
+          <input id="segundo" type="text" required>
+        </div>
+        <div class="col-span-2">
+          <label for="faculdade">Você tem pet? se sim, qual o nome?</label>
+          <input id="faculdade" type="text" required>
+        </div>
+        <div class="col-span-2">
+          <label for="filhos">Quem é o irmão mais lindo?</label>
+          <input id="filhos" type="text" required>
+        </div>
+        <div>
+          <label for="beleza">Seu nível de beleza?</label>
+          <input id="beleza" type="number" inputmode="numeric">
+          <div id="msgBeleza" class="msg-inline"></div>
+        </div>
+        <div>
+          <label for="inteligencia">Nível de inteligência?</label>
+          <input id="inteligencia" type="number" inputmode="numeric">
+          <div id="msgIntel" class="msg-inline"></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:14px;">
+        <button type="submit" class="btn btn-prim">Enviar</button>
+      </div>
+      <div id="msg4" class="msg"></div>
+    </form>
+  </section>
+
+  <!-- TELA 5 -->
+  <section id="tela5" class="hide">
+    <h1>Acesso concedido❤️</h1>
+    <div style="text-align:center;margin-top:20px;">
+      <button id="btnProximo" class="btn btn-prim">Próximo</button>
+    </div>
+  </section>
+
+  <!-- TELA 6 -->
+  <section id="tela6" class="hide">
+    <h1>Quer mesmo continuar?</h1>
+    <div class="area-botoes">
+      <button id="btnNao6" class="btn btn-sec">Não</button>
+      <button id="btnSim6" class="btn btn-prim">Sim</button>
+    </div>
+    <div id="msg6" class="msg"></div>
+  </section>
+
+  <!-- TELA 7 -->
+  <section id="tela7" class="hide">
+    <h1>Ruuum, então você quer mesmo, tá bom</h1>
+    <div class="area-botoes">
+      <button id="btnNao7" class="btn btn-sec">Não</button>
+      <button id="btnSim7" class="btn btn-prim">Sim</button>
+    </div>
+    <div id="msg7" class="msg"></div>
+  </section>
+
+  <!-- TELA 8 CARTA -->
+  <section id="tela8" class="hide" aria-live="polite">
+    <h1>Abra a cartinha</h1>
+    <p class="hint">confiiia kkkk pode abrir</p>
+    <div class="envelope-wrap">
+      <div class="envelope" id="envelope">
+        <div class="flap"></div>
+        <div class="paper">
+          <div class="letter-content">
+            <h2>AAAAEEE Abriu</h2>
+
+            <p>Ooi Hellen, tudo bem? Se chegou até aqui, eu espero que tenha se divertido com as perguntas kkkkk. Bom, essa foi uma maneira legal e diferente que eu encontrei de te fazer essa carta. Eu quero que você saiba o quanto me orgulho da pessoa que está se tornando. Você cresceu rápido (e isso me assusta um pouco) mas o que me deixa tranquilo é que você não está perdendo sua essência, e isso me deixa muito feliz. Nessa sua nova fase, entrando para o ensino médio, muuuita coisa vai mudar: amizades, responsabilidades, sonhos que vão nascer e outros que vão surgir durante o seu caminho. E tá tudo bem, essa é a parte legal de crescer e descobrir coisas novas. O importante é você lembrar sempre do valor que tem, da inteligência que carrega e da capacidade que você possui. Estarei sempre ao seu lado, em cada escolha sua, em cada dúvida, em cada momento que você precisar de apoio ou só de alguém para te ouvir. Você merece tudo que há de melhor nesse mundo, e eu acredito profundamente no seu futuro. Eu tenho muito orgulho de você. Te amo!</p>
+
+          </div>
+        </div>
+      </div>
+      <button id="btnRevelar" class="btn btn-prim">Abrir carta</button>
+    </div>
+    <div class="msg" id="msg8"></div>
+  </section>
+</main>
+
+<script>
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+
+  const area1=document.getElementById('area1');
+  const btnSim1=document.getElementById('btnSim1');
+  const btnNao1=document.getElementById('btnNao1');
+  const msg1=document.getElementById('msg1');
+  let fugas=0,podeClicar=false;
+
+  function centralizarRunner(){
+    const a=area1.getBoundingClientRect();
+    const b=btnSim1.getBoundingClientRect();
+    btnSim1.style.left=`${(a.width-b.width)/2}px`;
+    btnSim1.style.top=`${(a.height-b.height)/2}px`;
+  }
+  function moverRunner(){
+    const a=area1.getBoundingClientRect();
+    const b=btnSim1.getBoundingClientRect();
+    const maxX=a.width-b.width;
+    const maxY=a.height-b.height;
+    btnSim1.style.left=`${rand(0,Math.max(0,maxX))}px`;
+    btnSim1.style.top=`${rand(0,Math.max(0,maxY))}px`;
+  }
+
+  btnSim1.addEventListener('mouseenter',()=>{
+    if(!podeClicar){
+      fugas++;
+      moverRunner();
+      msg1.textContent=fugas<3?"😅 Quase! Tem certeza mesmo?":"Ok, agora deixo você clicar. 👺";
+      if(fugas>=3)podeClicar=true;
+    }
+  });
+  btnSim1.addEventListener('click',()=>{if(podeClicar)trocarTela('tela1','tela2');});
+  btnNao1.addEventListener('click',()=>msg1.textContent="Se não for para você, pode fechar a página. 👺");
+
+  document.getElementById('btnSim2').addEventListener('click',()=>trocarTela('tela2','tela3'));
+  document.getElementById('btnNao2').addEventListener('click',()=>document.getElementById('msg2').textContent="Resposta incorreta. Clique em 'Sim'.");
+
+  document.getElementById('btnSim3').addEventListener('click',()=>trocarTela('tela3','tela4'));
+  document.getElementById('btnNao3').addEventListener('click',()=>document.getElementById('msg3').textContent="Resposta incorreta. Clique em 'Sim'.");
+
+  function norm(s){
+    return (s||"").toString().trim().lowerCase?.()??(s||"").toString().trim().toLowerCase();
+  }
+  String.prototype.lowerCase=function(){return this.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();};
+
+  function analisarPets(resp){
+    const arr=(resp||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/,/g," ").replace(/\se\s/g," ").split(" ").filter(Boolean);
+    const temAlvin=arr.includes("alvin");
+    const temPandora=arr.includes("pandora");
+    const extras=arr.filter(n=>!["alvin","pandora"].includes(n));
+    return{temAlvin,temPandora,extras};
+  }
+
+  const AUTO_VAL=9999999,MIN_OK=9999999;
+
+  function shake(el){
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+  }
+
+  function aplicarRegra(el,msgEl,rotulo){
+    const raw=String(el.value??"").trim();
+    if(raw===""){msgEl.textContent="";msgEl.classList.remove('ok');return;}
+    const n=Number(raw);
+    if(!Number.isFinite(n)){msgEl.textContent="";msgEl.classList.remove('ok');return;}
+    if(n<MIN_OK){
+      shake(el);
+      msgEl.classList.remove('ok');
+      msgEl.textContent=`só isso de ${rotulo}? isso tá errado`;
+      setTimeout(()=>{
+        msgEl.textContent="olhe de novo, agora sim";
+        msgEl.classList.add('ok');
+        el.disabled=true;
+        setTimeout(()=>{
+          el.value=AUTO_VAL;
+          el.disabled=false;
+          el.focus(); el.select();
+        },450);
+      },550);
+    } else {
+      msgEl.textContent="olhe de novo, agora sim";
+      msgEl.classList.add('ok');
+    }
+  }
+
+  const form=document.getElementById('formTaissa');
+  const msg4=document.getElementById('msg4');
+  const primeiroEl=document.getElementById('primeiro');
+  const segundoEl=document.getElementById('segundo');
+  const faculEl=document.getElementById('faculdade');
+  const filhosEl=document.getElementById('filhos');
+  const belezaEl=document.getElementById('beleza');
+  const intelEl=document.getElementById('inteligencia');
+  const msgBeleza=document.getElementById('msgBeleza');
+  const msgIntel=document.getElementById('msgIntel');
+
+  belezaEl.addEventListener('input',()=>aplicarRegra(belezaEl,msgBeleza,"beleza"));
+  belezaEl.addEventListener('blur',()=>aplicarRegra(belezaEl,msgBeleza,"beleza"));
+  intelEl.addEventListener('input',()=>aplicarRegra(intelEl,msgIntel,"inteligência"));
+  intelEl.addEventListener('blur',()=>aplicarRegra(intelEl,msgIntel,"inteligência"));
+
+  form.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    msg4.textContent=""; msg4.classList.remove('erro');
+
+    if(!primeiroEl.value.trim()||!segundoEl.value.trim()||!faculEl.value.trim()||!filhosEl.value.trim()||!belezaEl.value||!intelEl.value){
+      msg4.classList.add('erro');
+      msg4.textContent="Preencha todos os campos.";
+      return;
+    }
+
+    const okPrimeiro=primeiroEl.value.trim().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()==="hellen";
+    const okSegundo=segundoEl.value.trim().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()==="santos";
+
+    if(!(okPrimeiro&&okSegundo)){
+      msg4.classList.add('erro');
+      msg4.textContent="Você não é a Hellen Santos!";
+      return;
+    }
+
+    const{temAlvin,temPandora,extras}=analisarPets(faculEl.value);
+
+    if(temAlvin&&!temPandora){
+      msg4.classList.add('erro');
+      msg4.textContent="Tem certeza que tem so o Alvin em casa 🐱";
+      return;
+    }
+    if(!temAlvin&&temPandora){
+      msg4.classList.add('erro');
+      msg4.textContent="Tem certeza que tem so a Pandora em casa 🐶";
+      return;
+    }
+    if((!temAlvin&&!temPandora)||extras.length>0){
+      msg4.classList.add('erro');
+      msg4.textContent="❌ Pets incorretos. Você não é a Hellen Santos!";
+      return;
+    }
+
+    aplicarRegra(belezaEl,msgBeleza,"beleza");
+    aplicarRegra(intelEl,msgIntel,"inteligência");
+    if(Number(belezaEl.value)<MIN_OK||Number(intelEl.value)<MIN_OK)return;
+
+    const irmao=filhosEl.value.trim().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+
+    if(irmao==="pedro"){
+      msg4.classList.add('erro');
+      msg4.textContent="Eita man o Pedro? pensa mais um pouco 😭";
+      return;
+    }
+    if(irmao!=="helton"){
+      msg4.classList.add('erro');
+      msg4.textContent="❌ Resposta incorreta. Tente novamente!";
+      return;
+    }
+
+    trocarTela('tela4','tela5');
+  });
+
+  const btnProximo=document.getElementById('btnProximo');
+  btnProximo?.addEventListener('click',()=>trocarTela('tela5','tela6'));
+
+  const btnSim6=document.getElementById('btnSim6');
+  const btnNao6=document.getElementById('btnNao6');
+  const msg6=document.getElementById('msg6');
+
+  btnSim6?.addEventListener('click',()=>{trocarTela('tela6','tela7');});
+  btnNao6?.addEventListener('click',()=>{msg6.textContent="❌ Então pare por aqui.";});
+
+  const btnSim7=document.getElementById('btnSim7');
+  const btnNao7=document.getElementById('btnNao7');
+  const msg7=document.getElementById('msg7');
+
+  btnSim7?.addEventListener('click',()=>{
+    trocarTela('tela7','tela8');
+    setTimeout(()=>document.getElementById('btnRevelar')?.focus?.(),0);
+  });
+  btnNao7?.addEventListener('click',()=>{msg7.textContent="❌ Ok, parando por aqui.";});
+
+  function trocarTela(from,to){
+    document.getElementById(from).classList.add('hide');
+    document.getElementById(to).classList.remove('hide');
+  }
+
+  window.addEventListener('load',()=>{
+    centralizarRunner();
+    window.addEventListener('resize',centralizarRunner);
+  });
+
+  const envelope=document.getElementById('envelope');
+  const btnRevelar=document.getElementById('btnRevelar');
+  const msg8=document.getElementById('msg8');
+
+  function abrirCarta(){
+    if(!envelope)return;
+    envelope.classList.add('open');
+    msg8.textContent="💖 Carta aberta! Role para ler se precisar.";
+  }
+  btnRevelar?.addEventListener('click',abrirCarta);
+</script>
+
+</body>
+</html>
